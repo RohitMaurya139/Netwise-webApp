@@ -18,6 +18,7 @@ const server = http.createServer(app);
 // Change these to match your deployment domains
 const allowedOrigins = [
   "https://netwise-webapp-frontend.onrender.com",
+  "https://netwise-web-app.vercel.app",
   "http://localhost:5173",
   "http://localhost:5174",
 ];
