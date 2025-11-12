@@ -5,33 +5,26 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { socket } from "./userDataContext.js";
 
-
-
 function UserContext({ children }) {
   const [userData, setUserData] = useState(null);
   const [profileData, setProfileData] = useState(null);
-  const [userPostData, setUserPostData] = useState( [] );
+  const [userPostData, setUserPostData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [edit , setEdit]=useState(false)
+  const [edit, setEdit] = useState(false);
   const [post, setPost] = useState(false);
   const { SERVER_URL } = useContext(AuthDataContext);
- const navigate=useNavigate()
+  const navigate = useNavigate();
 
+  // ✅ Fetch current user from API
   const fetchUserData = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await axios.get(SERVER_URL + "/api/user/currentuser", {
         withCredentials: true,
       });
-      console.log(res.data.data)
-      console.log("hello789")
-        setUserData(res.data);
-      
+      setUserData(res.data);
     } catch (error) {
+      console.error("User fetch error:", error.message);
       setUserData(null);
-      console.error(error.message);
-    } finally {
-      setLoading(false);
     }
   }, [SERVER_URL]);
 
@@ -40,31 +33,39 @@ function UserContext({ children }) {
       const res = await axios.get(SERVER_URL + "/api/post/get", {
         withCredentials: true,
       });
-      console.log(res.data);
       setUserPostData(res.data);
-
     } catch (error) {
-      console.error(error.message);
+      console.error("Post fetch error:", error.message);
     }
   }, [SERVER_URL]);
-  const getProfile = useCallback(async (username) => {
-    try {
-      const res = await axios.get(SERVER_URL + `/api/user/profile/${username}`, {
-        withCredentials: true,
-      });
-      console.log(res.data);
-      setProfileData(res.data.data);
-      navigate("/profile")
-    } catch (error) {
-      console.error(error.message);
-    }
-  }, [SERVER_URL]);
- useEffect(() => {
-   if (!SERVER_URL) return; // don't call API if SERVER_URL is not defined yet
-   fetchUserData();
-   getAllPost();
- }, [SERVER_URL, fetchUserData, getAllPost]);
 
+  const getProfile = useCallback(
+    async (username) => {
+      try {
+        const res = await axios.get(
+          SERVER_URL + `/api/user/profile/${username}`,
+          { withCredentials: true }
+        );
+        setProfileData(res.data.data);
+        navigate("/profile");
+      } catch (error) {
+        console.error(error.message);
+      }
+    },
+    [SERVER_URL, navigate]
+  );
+
+  // ✅ This ensures instant render — no waiting for API
+  useEffect(() => {
+    // Phase 1: Instantly set loading to false
+    setLoading(false);
+
+    // Phase 2: Background fetch user data
+    if (SERVER_URL) {
+      fetchUserData();
+      getAllPost();
+    }
+  }, [SERVER_URL, fetchUserData, getAllPost]);
 
   return (
     <UserData.Provider
@@ -74,7 +75,8 @@ function UserContext({ children }) {
         edit,
         socket,
         userPostData,
-        getAllPost,setUserPostData,
+        getAllPost,
+        setUserPostData,
         setEdit,
         post,
         getProfile,
